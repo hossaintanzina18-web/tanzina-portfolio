@@ -1,0 +1,209 @@
+import { motion, useInView } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { Mail, Phone, Linkedin, Github, Send, CheckCircle } from 'lucide-react';
+import { z } from 'zod';
+
+const contactSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email is too long"),
+  message: z.string().trim().min(1, "Message is required").max(1000, "Message is too long"),
+});
+
+const contactInfo = [
+  {
+    icon: Mail,
+    label: 'Email',
+    value: '2020000000042@seu.edu.bd',
+    href: 'mailto:2020000000042@seu.edu.bd',
+  },
+  {
+    icon: Phone,
+    label: 'Phone',
+    value: '+880 1748040190',
+    href: 'tel:+8801748040190',
+  },
+  {
+    icon: Linkedin,
+    label: 'LinkedIn',
+    value: 'linkedin.com/in/TanzinaHossain',
+    href: 'https://www.linkedin.com/in/TanzinaHossain',
+  },
+  {
+    icon: Github,
+    label: 'GitHub',
+    value: 'github.com/TanzinaHossain',
+    href: 'https://github.com/TanzinaHossain',
+  },
+];
+
+export const ContactSection = () => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+
+    const result = contactSchema.safeParse(formData);
+    if (!result.success) {
+      const fieldErrors: { name?: string; email?: string; message?: string } = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as 'name' | 'email' | 'message';
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Demo mode: Open mailto link with form data instead of simulating a sent message
+    const mailtoLink = `mailto:2020000000042@seu.edu.bd?subject=Portfolio Contact from ${encodeURIComponent(result.data.name)}&body=${encodeURIComponent(`From: ${result.data.name}\nEmail: ${result.data.email}\n\nMessage:\n${result.data.message}`)}`;
+    window.open(mailtoLink, '_blank');
+
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+    setFormData({ name: '', email: '', message: '' });
+
+    setTimeout(() => setIsSubmitted(false), 5000);
+  };
+
+  return (
+    <section id="contact" className="py-20 md:py-32 bg-secondary/30" ref={ref}>
+      <div className="section-container">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <p className="text-primary font-mono text-sm mb-2">{'// Get in touch'}</p>
+          <h2 className="text-3xl md:text-4xl font-bold">Contact Me</h2>
+          <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
+            Let's work together! Feel free to reach out for collaborations or just a friendly hello.
+          </p>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-12">
+          {/* Contact Info */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-6"
+          >
+            <h3 className="text-xl font-semibold mb-6">Contact Information</h3>
+            {contactInfo.map((item, index) => (
+              <motion.a
+                key={item.label}
+                href={item.href}
+                target={item.href.startsWith('http') ? '_blank' : undefined}
+                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                initial={{ opacity: 0, x: -20 }}
+                animate={isInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
+                className="flex items-center gap-4 p-4 bg-card rounded-xl card-shadow border border-border hover:border-primary/50 transition-all duration-300 group"
+              >
+                <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <item.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{item.label}</p>
+                  <p className="font-medium group-hover:text-primary transition-colors">{item.value}</p>
+                </div>
+              </motion.a>
+            ))}
+          </motion.div>
+
+          {/* Contact Form */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <form onSubmit={handleSubmit} className="bg-card rounded-xl p-6 md:p-8 card-shadow border border-border">
+              <h3 className="text-xl font-semibold mb-6">Send a Message</h3>
+              
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium mb-2">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-lg bg-secondary border ${
+                      errors.name ? 'border-destructive' : 'border-border'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+                    placeholder="John Doe"
+                  />
+                  {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-lg bg-secondary border ${
+                      errors.email ? 'border-destructive' : 'border-border'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+                    placeholder="john@example.com"
+                  />
+                  {errors.email && <p className="text-destructive text-sm mt-1">{errors.email}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={5}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className={`w-full px-4 py-3 rounded-lg bg-secondary border ${
+                      errors.message ? 'border-destructive' : 'border-border'
+                    } focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none`}
+                    placeholder="Your message here..."
+                  />
+                  {errors.message && <p className="text-destructive text-sm mt-1">{errors.message}</p>}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isSubmitted}
+                  className="w-full py-3 px-6 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-all disabled:opacity-70 flex items-center justify-center gap-2 glow-effect"
+                >
+                  {isSubmitting ? (
+                    'Opening Email...'
+                  ) : isSubmitted ? (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Email Client Opened!
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Send Message
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
